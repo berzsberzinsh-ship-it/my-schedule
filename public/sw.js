@@ -1,5 +1,5 @@
 /* Mans saraksts — offline app shell */
-const CACHE = 'my-schedule-shell-v2';
+const CACHE = 'my-schedule-shell-v3';
 const PRECACHE = [
   './',
   './index.html',
@@ -37,18 +37,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Network-first for all same-origin GETs (navigations, CSS, JS, assets):
+  // try network, update cache, fall back to cache only offline.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
