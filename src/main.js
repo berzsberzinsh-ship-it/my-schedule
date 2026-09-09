@@ -15,16 +15,113 @@ const WEEKDAYS = [
   { id: 5, short: 'Pk', full: 'Piektdiena' },
 ];
 
+const RIGA_TZ = 'Europe/Riga';
+const CLOCK_MS = 45_000;
+
 const app = document.getElementById('app');
 let lessons = loadLessons();
 let view = 'today'; // today | week
 let editingId = null;
 let formOpen = false;
 let toastTimer = null;
+let clockTimer = null;
 
-function todayWeekday() {
-  const d = new Date().getDay(); // 0=Sun
-  return d === 0 || d === 6 ? null : d; // Mon=1..Fri=5
+/** Riga calendar/time parts via Intl (not browser local default alone). */
+function getRigaParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: RIGA_TZ,
+    weekday: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const map = Object.fromEntries(
+    parts.filter((p) => p.type !== 'literal').map((p) => [p.type, p.value])
+  );
+  const wdMap = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 0 };
+  return {
+    weekday: wdMap[map.weekday] ?? null,
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+  };
+}
+
+/** Mon=1 … Fri=5; Sat/Sun → null (free day). */
+function todayWeekday(date = new Date()) {
+  const wd = getRigaParts(date).weekday;
+  return wd === 0 || wd === 6 ? null : wd;
+}
+
+function minutesSinceMidnight(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return h * 60 + m;
+}
+
+function nowMinutes(date = new Date()) {
+  const { hour, minute } = getRigaParts(date);
+  return hour * 60 + minute;
+}
+
+function formatRigaDateLabel(date = new Date()) {
+  return new Intl.DateTimeFormat('lv-LV', {
+    timeZone: RIGA_TZ,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(date);
+}
+
+/**
+ * @returns {{ kind: 'now'|'next'|'done'|'free'|'empty', lesson?: object, minutes?: number }}
+ */
+function getScheduleStatus(date = new Date()) {
+  const wd = todayWeekday(date);
+  if (wd === null) return { kind: 'free' };
+
+  const todayLessons = sortLessons(lessons.filter((l) => l.weekday === wd));
+  if (!todayLessons.length) return { kind: 'empty' };
+
+  const now = nowMinutes(date);
+
+  for (const lesson of todayLessons) {
+    const start = minutesSinceMidnight(lesson.start);
+    const end = minutesSinceMidnight(lesson.end);
+    if (now >= start && now < end) {
+      return { kind: 'now', lesson, minutes: end - now };
+    }
+  }
+
+  for (const lesson of todayLessons) {
+    const start = minutesSinceMidnight(lesson.start);
+    if (now < start) {
+      return { kind: 'next', lesson, minutes: start - now };
+    }
+  }
+
+  return { kind: 'done' };
+}
+
+function statusLineText(status) {
+  switch (status.kind) {
+    case 'now':
+      return `Tagad: ${status.lesson.subject} · vēl ${status.minutes} min`;
+    case 'next':
+      return `Nākamā: ${status.lesson.subject} · pēc ${status.minutes} min`;
+    case 'done':
+      return 'Šodien stundas beigušās';
+    case 'free':
+      return 'Šodien brīvdiena';
+    case 'empty':
+      return 'Šodien nav stundu';
+    default:
+      return '';
+  }
 }
 
 function sortLessons(list) {
@@ -135,13 +232,15 @@ function importBackup(file) {
   reader.readAsText(file);
 }
 
-function lessonCard(lesson, { showDay = false } = {}) {
+function lessonCard(lesson, { showDay = false, isNow = false } = {}) {
   const day = WEEKDAYS.find((d) => d.id === lesson.weekday);
   const meta = [lesson.classLabel, lesson.room, lesson.teacher]
     .filter(Boolean)
     .join(' · ');
+  const nowClass = isNow ? ' lesson-card--now' : '';
+  const nowBadge = isNow ? `<span class="now-badge">Tagad</span>` : '';
   return `
-    <article class="lesson-card" data-id="${lesson.id}" role="button" tabindex="0">
+    <article class="lesson-card${nowClass}" data-id="${lesson.id}" role="button" tabindex="0">
       <div class="lesson-time">
         <span class="time-start">${escapeHtml(lesson.start)}</span>
         <span class="time-sep">–</span>
@@ -149,6 +248,7 @@ function lessonCard(lesson, { showDay = false } = {}) {
       </div>
       <div class="lesson-body">
         ${showDay ? `<span class="day-badge">${escapeHtml(day?.short || '')}</span>` : ''}
+        ${nowBadge}
         <h3 class="lesson-subject">${escapeHtml(lesson.subject)}</h3>
         ${meta ? `<p class="lesson-meta">${escapeHtml(meta)}</p>` : ''}
       </div>
@@ -176,6 +276,8 @@ function renderToday() {
   }
   const day = WEEKDAYS.find((d) => d.id === wd);
   const todayLessons = sortLessons(lessons.filter((l) => l.weekday === wd));
+  const status = getScheduleStatus();
+  const nowId = status.kind === 'now' ? status.lesson.id : null;
   return `
     <section class="panel">
       <header class="panel-head">
@@ -184,7 +286,9 @@ function renderToday() {
       </header>
       ${
         todayLessons.length
-          ? `<div class="lesson-list">${todayLessons.map((l) => lessonCard(l)).join('')}</div>`
+          ? `<div class="lesson-list">${todayLessons
+              .map((l) => lessonCard(l, { isNow: l.id === nowId }))
+              .join('')}</div>`
           : `<p class="empty-hint">Šodien vēl nav stundu. Pievieno pirmo!</p>`
       }
     </section>
@@ -192,19 +296,29 @@ function renderToday() {
 }
 
 function renderWeek() {
+  const status = getScheduleStatus();
+  const nowId =
+    status.kind === 'now' && todayWeekday() !== null ? status.lesson.id : null;
   return `
     <section class="panel week-panel">
       ${WEEKDAYS.map((day) => {
         const dayLessons = sortLessons(lessons.filter((l) => l.weekday === day.id));
+        const isToday = todayWeekday() === day.id;
         return `
-          <div class="week-day">
+          <div class="week-day${isToday ? ' week-day--today' : ''}">
             <header class="week-day-head">
-              <h3>${escapeHtml(day.full)}</h3>
+              <h3>${escapeHtml(day.full)}${isToday ? ' <span class="today-pill">šodien</span>' : ''}</h3>
               <span class="muted">${dayLessons.length}</span>
             </header>
             ${
               dayLessons.length
-                ? dayLessons.map((l) => lessonCard(l)).join('')
+                ? dayLessons
+                    .map((l) =>
+                      lessonCard(l, {
+                        isNow: isToday && l.id === nowId,
+                      })
+                    )
+                    .join('')
                 : `<p class="empty-mini">—</p>`
             }
           </div>
@@ -278,12 +392,26 @@ function renderForm() {
   `;
 }
 
+function clearClock() {
+  if (clockTimer != null) {
+    clearInterval(clockTimer);
+    clockTimer = null;
+  }
+}
+
+function startClock() {
+  clearClock();
+  clockTimer = setInterval(() => {
+    // Avoid wiping an open form (would reset inputs / focus).
+    if (formOpen) return;
+    render();
+  }, CLOCK_MS);
+}
+
 function render() {
-  const dateLabel = new Date().toLocaleDateString('lv-LV', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const dateLabel = formatRigaDateLabel();
+  const status = getScheduleStatus();
+  const statusText = statusLineText(status);
 
   app.innerHTML = `
     <div class="shell">
@@ -292,6 +420,7 @@ function render() {
           <p class="eyebrow">Uz ierīces</p>
           <h1>Mans saraksts</h1>
           <p class="date-line">${escapeHtml(dateLabel)}</p>
+          <p class="status-line" aria-live="polite">${escapeHtml(statusText)}</p>
         </div>
         <div class="top-actions">
           <button type="button" class="icon-btn" data-action="export" title="Eksportēt JSON" aria-label="Eksportēt">↓</button>
@@ -317,6 +446,7 @@ function render() {
   `;
 
   bindEvents();
+  startClock();
 }
 
 function bindEvents() {

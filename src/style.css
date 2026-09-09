@@ -420,3 +420,53 @@ select {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+.status-line {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.lesson-card--now {
+  background: linear-gradient(180deg, #e8f8ec 0%, #d8f3dc 100%);
+  border-color: var(--green-mid);
+  box-shadow: 0 0 0 2px rgba(64, 145, 108, 0.28);
+}
+
+.lesson-card--now .lesson-time {
+  color: var(--green-deep);
+}
+
+.now-badge {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.today-pill {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.week-day--today {
+  background: #f7fbf8;
+  margin: 0 -0.35rem;
+  padding: 0.55rem 0.35rem 0.85rem;
+  border-radius: 12px;
+}

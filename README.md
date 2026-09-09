@@ -7,6 +7,7 @@ Personīgā skolas stundu saraksta PWA (v1). Īsas latviešu etiķetes, dati **t
 ## Funkcijas
 
 - Skati: **Šodien** un **Nedēļa** (pirmdiena–piektdiena)
+- Pašreizējā stunda / statusa rinda pēc **Europe/Riga** pulksteņa (atjaunojas ~ik pēc 45 s)
 - Stundu pievienošana, rediģēšana, dzēšana
 - Lauki: diena, laiks no–līdz, priekšmets; pēc izvēles klase, kabinets, skolotājs
 - JSON eksportes / imports (rezerves kopija)
