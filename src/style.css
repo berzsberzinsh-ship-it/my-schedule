@@ -440,16 +440,20 @@ body.has-bg .tabs {
 }
 
 .form input,
-.form select {
+.form select,
+.form textarea {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 0.7rem 0.8rem;
   background: var(--surface-elevated);
   color: var(--ink);
+  /* ≥16px: stops iOS Safari auto-zoom on focus (labels use 0.88rem) */
+  font-size: 16px;
 }
 
 .form input:focus,
-.form select:focus {
+.form select:focus,
+.form textarea:focus {
   outline: 2px solid var(--green-mid);
   border-color: transparent;
 }
