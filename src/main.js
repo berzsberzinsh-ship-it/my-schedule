@@ -9,6 +9,12 @@ import {
   saveBgPrefs,
 } from './storage.js';
 
+import { inject } from '@vercel/analytics';
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+inject();
+injectSpeedInsights();
+
 const WEEKDAYS = [
   { id: 1, short: 'P', full: 'Pirmdiena' },
   { id: 2, short: 'O', full: 'Otrdiena' },

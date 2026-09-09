@@ -42,6 +42,11 @@ Statiskie faili nonāk mapē `dist/`.
 
 Nav nepieciešamas vides mainīgās — aplikācija nestrādā ar backend.
 
+
+## Analītika (Vercel)
+
+Lai redzētu, cik lietotāju izmanto PWA, ieslēdz **Web Analytics** Vercel projektā `my-schedule-pwa`: **Project → Analytics → Enable** (ja vēl nav ieslēgts). Hobby plāns to atbalsta. Aplikācijā ir `@vercel/analytics` (un Speed Insights).
+
 ## Dati un privātums
 
 - Viss saraksts un fona attēls glabājas pārlūka `localStorage`
