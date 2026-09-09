@@ -1,4 +1,10 @@
 const STORAGE_KEY = 'my-schedule-v1';
+const BG_KEY = 'my-schedule-bg-v1';
+
+const DEFAULT_BG = {
+  image: null,
+  opacity: 0.65,
+};
 
 export function loadLessons() {
   try {
@@ -18,6 +24,35 @@ export function saveLessons(lessons) {
     lessons,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+export function loadBgPrefs() {
+  try {
+    const raw = localStorage.getItem(BG_KEY);
+    if (!raw) return { ...DEFAULT_BG };
+    const data = JSON.parse(raw);
+    const opacity = Number(data.opacity);
+    return {
+      image: typeof data.image === 'string' && data.image ? data.image : null,
+      opacity:
+        Number.isFinite(opacity) && opacity >= 0.4 && opacity <= 0.85
+          ? opacity
+          : DEFAULT_BG.opacity,
+    };
+  } catch {
+    return { ...DEFAULT_BG };
+  }
+}
+
+export function saveBgPrefs(prefs) {
+  const payload = {
+    image: prefs.image || null,
+    opacity:
+      Number.isFinite(prefs.opacity) && prefs.opacity >= 0.4 && prefs.opacity <= 0.85
+        ? prefs.opacity
+        : DEFAULT_BG.opacity,
+  };
+  localStorage.setItem(BG_KEY, JSON.stringify(payload));
 }
 
 export function exportJson(lessons) {

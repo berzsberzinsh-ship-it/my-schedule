@@ -1,5 +1,5 @@
 /* Mans saraksts — offline app shell */
-const CACHE = 'my-schedule-shell-v1';
+const CACHE = 'my-schedule-shell-v2';
 const PRECACHE = [
   './',
   './index.html',

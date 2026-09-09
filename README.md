@@ -6,6 +6,9 @@ Personīgā skolas stundu saraksta PWA (v1). Īsas latviešu etiķetes, dati **t
 
 ## Funkcijas
 
+- **Tumšais dizains** (noklusējums) — labs kontrasts, skaidrs «Tagad» izcelums
+- **Fona attēls** (Iestatījumi ⚙): izvēlies foto no telefona; tiek saspiests un saglabāts ierīcē; regulējams tumšais pārklājums lasāmībai
+
 - Skati: **Šodien** un **Nedēļa** (pirmdiena–piektdiena)
 - Pašreizējā stunda / statusa rinda pēc **Europe/Riga** pulksteņa (atjaunojas ~ik pēc 45 s)
 - Stundu pievienošana, rediģēšana, dzēšana
@@ -41,8 +44,8 @@ Nav nepieciešamas vides mainīgās — aplikācija nestrādā ar backend.
 
 ## Dati un privātums
 
-- Viss saraksts glabājas pārlūka `localStorage`
-- Dzēšot vietnes datus / notīrot kešu, saraksts pazūd — izmanto **eksportu**
+- Viss saraksts un fona attēls glabājas pārlūka `localStorage`
+- Dzēšot vietnes datus / notīrot kešu, saraksts un fons pazūd — izmanto **eksportu** stundām
 - Nav pieteikšanās un nav mākoņa sinhronizācijas
 
 ## Tehnoloģijas
